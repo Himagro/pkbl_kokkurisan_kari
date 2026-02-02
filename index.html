@@ -326,7 +326,7 @@
 
 <div class="container">
     <div class="chat-log">
-        <div class="chat-header"こっくりさん</div>
+        <div class="chat-header">こっくりさん</div>
         <div class="messages" id="chatMessages">
             <div class="bubble bot">質問を入力して送信してね</div>
         </div>
@@ -477,7 +477,7 @@
         typingBubble.className = 'bubble bot';
         typingBubble.id = typingId;
         typingBubble.innerHTML = `
-            <div style="font-size:10px; color:#666;">pkbl_kokkurisan</div>
+            <div style="font-size:10px; color:#666;">こっくりさん</div>
             <div class="typing-dots">
                 <span class="typing-dot"></span>
                 <span class="typing-dot"></span>
@@ -495,7 +495,7 @@
         osc.type = 'sine';
         osc.frequency.setValueAtTime(400, audioCtx.currentTime); // 日本の標準的な400Hz
         
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
 
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -535,7 +535,7 @@
                 oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
                 
                 // フェードをかけず、指定した音量で一定に鳴らす
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
                 
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
@@ -565,7 +565,7 @@
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTime);
             
             // フェードなしの設定
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime + startTime);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime + startTime);
             
             osc.connect(gain);
             gain.connect(audioCtx.destination);
