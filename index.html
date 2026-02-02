@@ -326,7 +326,7 @@
 
 <div class="container">
     <div class="chat-log">
-        <div class="chat-header">こっくりさん</div>
+        <div class="chat-header">通信履歴</div>
         <div class="messages" id="chatMessages">
             <div class="bubble bot">質問を入力して送信してね</div>
         </div>
@@ -466,7 +466,7 @@
     }
     function send() {
         if (message.length === 0) return;
-        addChatBubble("発信者", message, "me");
+        addChatBubble("あなた", message, "me");
         
         message = ""; 
         updateDisplay();
@@ -477,7 +477,7 @@
         typingBubble.className = 'bubble bot';
         typingBubble.id = typingId;
         typingBubble.innerHTML = `
-            <div style="font-size:10px; color:#666;">こっくりさん</div>
+            <div style="font-size:10px; color:#666;">59ri3_oidkdsi</div>
             <div class="typing-dots">
                 <span class="typing-dot"></span>
                 <span class="typing-dot"></span>
