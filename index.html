@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポケベルこっくりさん</title>
+    <link rel="icon" type="image/png" href="Favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+JP+N&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --phone-green: #008b45;
+            --monitor-orange: #ff9900;
+            --monitor-text: #000000;
+            --monitor-text: rgba(0, 0, 0, 0.70);
+            --log-bg: #ebe0ca;
+        }
+
+        body {
+            background-color: #dcdcdc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            align-items: stretch;
+            max-width: 1000px;
+            height: 600px;
+        }
+
+        .chat-log {
+            width: 320px;
+            background-color: var(--log-bg);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid #ccc;
+        }
+
+        .chat-header {
+            background-color: #ffc400;
+            color: #381f00;
+            padding: 15px;
+            font-family: "IBM Plex Sans JP", sans-serif;
+            font-weight: 700;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .messages {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bubble {
+            max-width: 80%;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .bubble.me { align-self: flex-end; background-color: #ffbfcf; border-top-right-radius: 0; }
+        .bubble.bot { align-self: flex-start; background-color: #ffffff; border-top-left-radius: 0; }
+
+        .phone-body {
+            background-color: var(--phone-green);
+            width: 360px; /* 少し幅を調整 */
+            padding: 40px 20px;
+            border-radius: 30px 30px 60px 60px;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.3), 15px 15px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 中央寄せ */
+        }
+
+        .display {
+            background-color: var(--monitor-orange);
+            width: 280px;
+            height: 90px;
+            margin-bottom: 30px;
+            border: 6px solid #222;
+            border-radius: 8px;
+            padding: 10px; /* 左右のパディングを均等に */
+            color: var(--monitor-text);
+            
+            /* フォントサイズの調整 */
+            font-family: "WDXL Lubrifont JP N", sans-serif;
+            font-size: 24px;       /* 16文字が収まるサイズ */
+            letter-spacing: 0px;  /* 文字間隔を詰めすぎない */
+            line-height: 1.4;     /* 2行になった時の行間 */
+            
+            box-shadow: inset 2px 2px 10px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+            background-size: 3px 3px;
+            
+            /* 縦方向のレイアウトを固定 */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .display::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(255,255,255,0.1) 0%, transparent 50%, rgba(0,0,0,0.05) 100%);
+            pointer-events: none;
+        }
+
+        #screen {
+            display: inline;
+            white-space: pre-wrap;
+            word-break: break-all;
+            /* フォントサイズを親要素と合わせる */
+            font-size: 24px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 15px;          /* 文字サイズに合わせて少し細く */
+            height: 24px;         /* 文字の高さに合わせる */
+            background-color: var(--monitor-text);
+            vertical-align: -4px;
+            margin-left: 1px;
+            animation: blink 0.8s infinite;
+        }
+
+/* blinkアニメーションは既にあるのでそのままでOKです */
+
+        @keyframes blink {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* インターフェース部分の幅を絞って隙間を詰める */
+        .main-interface {
+            display: flex;
+            gap: 15px;
+            height: 270px; /* 全体の高さを少し凝縮 */
+        }
+
+        .send-btn {
+            width: 60px; /* スリムに */
+            height: 100%;
+            background: linear-gradient(145deg, #addd34, #219847);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-family: "Zen Maru Gothic", sans-serif;
+            font-weight: 500;
+            font-size: 25px;
+            cursor: pointer;
+            box-shadow: 0px 4px 0px #004d26;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            letter-spacing: 6px;
+        }
+
+        .send-btn:active { transform: translateY(2px); box-shadow: 0px 1px 0px #004d26; }
+
+        .keypad {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .key-row {
+            display: flex;
+            gap: 10px; /* ボタン間の左右の隙間を詰める */
+        }
+
+        .dial-btn {
+            width: 60px; /* 少し小ぶりに */
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(145deg, #d8d8d8, #808080);
+            box-shadow: 0px 4px 0px #004d26;
+            font-family: "Geist", sans-serif;
+            font-size: 35px;
+            font-weight: 400;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dial-btn:active { transform: scale(0.95); box-shadow: 0px 1px 0px #004d26; }
+
+            /* 筐体下部のレイアウト */
+        .footer-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 30px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* 横長の角丸パネル */
+        .help-panel {
+            background-color: #004d26;
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-family: "Zen Maru Gothic", sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            width: 205px; 
+            text-align: center;
+            box-shadow: inset 1px 1px 4px rgba(0,0,0,0.2);
+        }
+
+        /* ヘルプ用の赤い丸ボタン */
+        .help-red-btn {
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle at 30% 30%, #ff5555, #990000);
+            color: #ffffff;
+            border: 3px solid #989898;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0px 4px 0px #004d26;
+            font-family: "Geist", sans-serif;
+            font-size: 20px;
+            font-weight: 400;
+        }
+
+        .help-red-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0px 1px 0px #004d26;
+        }
+
+        /* 操作ガイドのモーダル表示（後で画像を入れる用） */
+        .help-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgb(55, 51, 57);
+            padding: 20px;
+            border-radius: 15px;
+            border: 4px solid #000000;
+            z-index: 100;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 99;
+        }
+
+        .modal-close-btn {
+            margin-top: 10px;
+            padding: 5px 30px;
+            /* 送信ボタンに近い緑のグラデーション */
+            background: linear-gradient(145deg, rgb(154, 143, 159), rgb(89, 83, 92)); 
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-family: "IBM Plex Sans JP", sans-serif;
+            font-weight: 500;
+            font-size: 18px;
+            cursor: pointer;
+            /* 筐体ボタン共通の深い緑の影 */
+            box-shadow: 0px 4px 0px #000000; 
+            transition: transform 0.1s;
+        }
+
+        .modal-close-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0px 1px 0px #004d26;
+        }
+
+        /* 返信待ちドットのアニメーション */
+        .typing-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            margin-right: 1px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); opacity: 0.3; }
+            50% { transform: translateY(-5px); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="chat-log">
+        <div class="chat-header">pkbl_kokkurisan</div>
+        <div class="messages" id="chatMessages">
+            <div class="bubble bot">質問を入力して送信してね</div>
+        </div>
+    </div>
+
+    <div class="phone-body">
+        <div class="display">
+            <div id="history" style="font-size:12px; height:15px; opacity:0.6; position: relative; z-index: 1;"></div>
+            <div style="position: relative; z-index: 1; text-align: left;">
+                <span id="screen"></span><span class="cursor"></span>
+            </div>
+        </div>
+
+        <div class="main-interface">
+            <button class="send-btn" onclick="send()">送信</button>
+
+            <div class="keypad">
+                <div class="key-row">
+                    <button class="dial-btn" onclick="press('1')">1</button>
+                    <button class="dial-btn" onclick="press('2')">2</button>
+                    <button class="dial-btn" onclick="press('3')">3</button>
+                </div>
+                <div class="key-row">
+                    <button class="dial-btn" onclick="press('4')">4</button>
+                    <button class="dial-btn" onclick="press('5')">5</button>
+                    <button class="dial-btn" onclick="press('6')">6</button>
+                </div>
+                <div class="key-row">
+                    <button class="dial-btn" onclick="press('7')">7</button>
+                    <button class="dial-btn" onclick="press('8')">8</button>
+                    <button class="dial-btn" onclick="press('9')">9</button>
+                </div>
+                <div class="key-row">
+                    <button class="dial-btn" onclick="backspace()">＊</button>
+                    <button class="dial-btn" onclick="press('0')">0</button>
+                    <button class="dial-btn" onclick="makeSmallOnly()">#</button>
+                </div>
+            </div>
+        </div>
+        <div class="footer-controls">
+            <div class="help-panel">入力方法がわからない方へ ▶</div>
+            <button class="help-red-btn" onclick="showHelp()">?</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* JavaScript部分は変更なし */
+    let buffer = ""; let message = "";
+    const screen = document.getElementById('screen');
+    const history = document.getElementById('history');
+    const chatMessages = document.getElementById('chatMessages');
+
+    const pocketBellMap = {
+        '11':'ア', '12':'イ', '13':'ウ', '14':'エ', '15':'オ',
+        '21':'カ', '22':'キ', '23':'ク', '24':'ケ', '25':'コ',
+        '31':'サ', '32':'シ', '33':'ス', '34':'セ', '35':'ソ',
+        '41':'タ', '42':'チ', '43':'ツ', '44':'テ', '45':'ト',
+        '51':'ナ', '52':'ニ', '53':'ヌ', '54':'ネ', '55':'ノ',
+        '61':'ハ', '62':'ヒ', '63':'フ', '64':'ヘ', '65':'ホ',
+        '71':'マ', '72':'ミ', '73':'ム', '74':'メ', '75':'モ',
+        '81':'ヤ', '82':'（', '83':'ユ', '84':'）', '85':'ヨ',
+        '91':'ラ', '92':'リ', '93':'ル', '94':'レ', '95':'ロ',
+        '01':'ワ', '02':'ヲ', '03':'ン', '04':'゛', '05':'゜',
+        '16':'A', '17':'B', '18':'C', '19':'D', '10':'E',
+        '26':'F', '27':'G', '28':'H', '29':'I', '20':'J',
+        '36':'K', '37':'L', '38':'M', '39':'N', '30':'O',
+        '46':'P', '47':'Q', '48':'R', '49':'S', '40':'T',
+        '56':'U', '57':'V', '58':'W', '59':'X', '50':'Y',
+        '66':'Z', '67':'?', '68':'!', '69':'ー', '60':'/',
+        '76':'¥', '77':'&', '86':'*', '87':'#', '88':'　',
+        '96':'1', '97':'2', '98':'3', '99':'4', '90':'5',
+        '06':'6', '07':'7', '08':'8', '09':'9', '00':'0'
+    };
+
+    const smallToggleMap = {'ア':'ァ', 'ァ':'ア', 'イ':'ィ', 'ィ':'イ', 'ウ':'ゥ', 'ゥ':'ウ', 'エ':'ェ', 'ェ':'エ', 'オ':'ォ', 'ォ':'オ', 'ツ':'ッ', 'ッ':'ツ', 'ヤ':'ャ', 'ャ':'ヤ', 'ユ':'ュ', 'ュ':'ユ', 'ヨ':'ョ', 'ョ':'ヨ', 'ワ':'ヮ', 'ヮ':'ワ'};
+    const responses = ['絶対大丈夫！', '大吉', 'ありよりのあり', '多分大丈夫', 'なんとかなる', 'なしよりのあり', '正直わからん', 'ノーコメントで', 'キミに任せた', 'お願いしてみて', 'ありよりのなし', '多分ダメ', 'びみょい', '絶対ダメ！', '凶', 'なしよりのなし'];
+    const dtmfFrequencies = {
+        '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+        '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+        '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+        '0': [941, 1336], '＊': [941, 1209], '＃': [941, 1477]
+    };
+
+    function press(num) {
+        // 32文字を超えていたら入力を受け付けない
+        if (message.length >= 32 && buffer === "") {
+            return; 
+        }
+
+        beep(num);
+        if (buffer === "") { 
+            buffer = num; 
+            history.innerText = "入力中: " + buffer; 
+        } 
+        else { 
+            const code = buffer + num; 
+            const nextChar = pocketBellMap[code] || "?";
+            
+            // 合計が32文字を超える場合は追加しない
+            if (message.length < 32) {
+                message += nextChar;
+            }
+            
+            buffer = ""; 
+            history.innerText = ""; 
+            updateDisplay(); 
+        }
+    }
+    function backspace() { 
+        beep('＊'); // ＊の音
+        if (buffer !== "") { buffer = ""; history.innerText = ""; } else { message = message.slice(0, -1); updateDisplay(); } 
+    }
+    function makeSmallOnly() { 
+        beep('＃'); // ＃の音
+        if (message.length === 0) return; 
+        let lastChar = message.slice(-1); 
+        if (smallToggleMap[lastChar]) { message = message.slice(0, -1) + smallToggleMap[lastChar]; } 
+        updateDisplay(); 
+    }
+    function updateDisplay() {
+        let formattedMessage = "";
+        if (message.length > 16) {
+            // 16文字で区切って改行コードを入れる
+            formattedMessage = message.slice(0, 16) + "<br>" + message.slice(16, 32);
+        } else {
+            formattedMessage = message;
+        }
+        screen.innerHTML = formattedMessage;
+    }
+    function addChatBubble(sender, text, type) {
+        const bubble = document.createElement('div');
+        bubble.className = `bubble ${type}`;
+        bubble.innerHTML = `<div style="font-size:10px; color:#666;">${sender}</div>${text}`;
+        chatMessages.appendChild(bubble);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    function send() {
+        if (message.length === 0) return;
+        addChatBubble("発信者", message, "me");
+        
+        message = ""; 
+        updateDisplay();
+
+        // --- 入力中アニメーションの表示 ---
+        const typingId = "typing-" + Date.now(); // 削除するためのID
+        const typingBubble = document.createElement('div');
+        typingBubble.className = 'bubble bot';
+        typingBubble.id = typingId;
+        typingBubble.innerHTML = `
+            <div style="font-size:10px; color:#666;">pkbl_kokkurisan</div>
+            <div class="typing-dots">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+            </div>
+        `;
+        chatMessages.appendChild(typingBubble);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // --- 「ツー」音（ダイヤルトーン）の再生 ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime); // 日本の標準的な400Hz
+        
+        gain.gain.setValueAtTime(1, audioCtx.currentTime);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+
+        // ランダムな待ち時間
+        const minTime = 500;
+        const maxTime = 5000;
+        const randomDelay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
+
+        setTimeout(() => {
+            // 返信が届く瞬間に「ツー」音を止める
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            osc.stop();
+
+            // 入力中アニメーションを消去
+            const tempBubble = document.getElementById(typingId);
+            if (tempBubble) tempBubble.remove();
+
+            // 本番の返信を表示
+            const reply = responses[Math.floor(Math.random() * responses.length)];
+            addChatBubble("pkbl_kokkurisan", reply, "bot");
+
+            // 着信を知らせる「ピッ」という短い音
+            beep(1200);
+        }, randomDelay);
+    }
+    function beep(char) {
+        const freqs = dtmfFrequencies[char] || [800, 800];
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            freqs.forEach(freq => {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                // フェードをかけず、指定した音量で一定に鳴らす
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.start();
+                // 0.15秒後に「プツッ」と止める
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            });
+        } catch (e) {}
+    }
+    // モーダル表示用のHTMLをbodyの最後に追加しておく必要があります
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="overlay" class="modal-overlay" onclick="closeHelp()"></div>
+        <div id="helpModal" class="help-modal">
+            <img src="InputTable.png" alt="help" height="600px"><br>
+            <button class="modal-close-btn" onclick="closeHelp()">閉じる</button>
+        </div>
+    `);
+
+    function showHelp() {
+        // 2〜3音のメロディを再生
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const playTone = (freq, startTime, duration) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTime);
+            
+            // フェードなしの設定
+            gain.gain.setValueAtTime(1, audioCtx.currentTime + startTime);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(audioCtx.currentTime + startTime);
+            osc.stop(audioCtx.currentTime + startTime + duration);
+        };
+
+        // 音の構成（周波数, 開始遅延, 鳴る長さ）
+        playTone(1500, 0.00, 0.15); // 1音目
+        playTone(1500, 0.20, 0.15); // 2音目
+        playTone(1500, 0.40, 0.15); // 3音目
+
+        // モーダルの表示処理
+        document.getElementById('helpModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function closeHelp() {
+        document.getElementById('helpModal').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
